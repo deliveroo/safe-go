@@ -52,6 +52,17 @@ func Do(fn func() error) (err error) {
 	return fn()
 }
 
+// DoWithResult executes fn. If a panic occurs, it will be recovered and
+// returned as a safe.PanicError.
+func DoWithResult(fn func() (interface{}, error)) (res interface{}, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = panicError(r)
+		}
+	}()
+	return fn()
+}
+
 // Go executes fn in a background goroutine. If a panic occurs, it will be
 // recovered and passed to the global panic handler.
 func Go(fn func()) {

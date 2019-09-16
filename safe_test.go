@@ -29,6 +29,39 @@ func ExampleDo() {
 	// panic: unhandled error
 }
 
+func ExampleDoWithResult() {
+	getName := func() string {
+		panic("unhandled error")
+	}
+	_, err := safe.DoWithResult(func() (interface{}, error) {
+		_ = getName()
+		return nil, nil
+	})
+
+	if err, ok := err.(safe.PanicError); ok {
+		fmt.Println(err)
+	}
+	// Output:
+	// panic: unhandled error
+}
+
+func ExampleDoWithResult_ok() {
+	getName := func() string {
+		return "OK"
+	}
+	res, err := safe.DoWithResult(func() (interface{}, error) {
+		return getName(), nil
+	})
+
+	if err, ok := err.(safe.PanicError); ok {
+		fmt.Println(err)
+	} else {
+		fmt.Println(res.(string))
+	}
+	// Output:
+	// OK
+}
+
 func ExampleGo() {
 	safe.SetPanicHandler(func(err error) {
 		fmt.Println(err)
@@ -83,6 +116,41 @@ func TestDo(t *testing.T) {
 		})
 		assert.Equal(t, err.Error(), "internal error")
 		assert.Equal(t, reflect.TypeOf(err).String(), "safe_test.testError")
+	})
+}
+
+func TestDoWithResult(t *testing.T) {
+	t.Run("with panic", func(t *testing.T) {
+		_, err := safe.DoWithResult(func() (interface{}, error) {
+			panic("internal error")
+		})
+		if err == nil {
+			t.Fatal("expected error")
+		}
+		assert.Equal(t, err.Error(), "panic: internal error")
+		panicErr, ok := err.(safe.PanicError)
+		if !ok {
+			t.Fatal("err not a safe.PanicError")
+		}
+		assert.Equal(t, panicErr.Panic(), "internal error")
+	})
+
+	t.Run("with error", func(t *testing.T) {
+		_, err := safe.DoWithResult(func() (interface{}, error) {
+			return nil, testError("internal error")
+		})
+		assert.Equal(t, err.Error(), "internal error")
+		assert.Equal(t, reflect.TypeOf(err).String(), "safe_test.testError")
+	})
+
+	t.Run("with result", func(t *testing.T) {
+		res, err := safe.DoWithResult(func() (interface{}, error) {
+			return "foo", nil
+		})
+		if err != nil {
+			t.Fatal("expected no error")
+		}
+		assert.Equal(t, res.(string), "foo")
 	})
 }
 
