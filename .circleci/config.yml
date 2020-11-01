@@ -1,14 +1,25 @@
+# GLOBAL-ANCHORS - DockerHub Authentication changes applied - PROD-1431 / PROD-1435
+global_dockerhub_login: &global_dockerhub_login
+  run:
+    name: Authenticate with hub.docker.com - DockerHub
+    command: docker login -u $GLOBAL_DOCKERHUB_USERNAME -p $GLOBAL_DOCKERHUB_PASSWORD
+global_dockerhub_auth: &global_dockerhub_auth
+  auth:
+    username: $GLOBAL_DOCKERHUB_USERNAME
+    password: $GLOBAL_DOCKERHUB_PASSWORD
 version: 2
 jobs:
   build:
     docker:
       - image: circleci/golang:1.13
+        <<: *global_dockerhub_auth
     working_directory: /go/src/github.com/deliveroo/safe-go
 
     environment:
       TEST_RESULTS: /tmp/test-results
 
     steps:
+      - *global_dockerhub_login
       - checkout
       - run: mkdir -p $TEST_RESULTS
       - restore_cache:
