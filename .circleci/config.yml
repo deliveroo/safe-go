@@ -3,6 +3,9 @@ global_dockerhub_login: &global_dockerhub_login
   run:
     name: Authenticate with hub.docker.com - DockerHub
     command: docker login -u $GLOBAL_DOCKERHUB_USERNAME -p $GLOBAL_DOCKERHUB_PASSWORD
+global_context: &global_context
+  context:
+    - org-global
 global_dockerhub_auth: &global_dockerhub_auth
   auth:
     username: $GLOBAL_DOCKERHUB_USERNAME
@@ -51,3 +54,9 @@ jobs:
 
       - store_test_results:
           path: /tmp/test-results
+workflows:
+  version: 2
+  test_build_push:
+    jobs:
+      - build:
+          <<: *global_context
